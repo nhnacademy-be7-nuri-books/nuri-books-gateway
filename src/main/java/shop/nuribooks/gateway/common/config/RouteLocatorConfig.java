@@ -12,9 +12,6 @@ public class RouteLocatorConfig {
 	public RouteLocator myRoute(RouteLocatorBuilder builder) {
 
 		return builder.routes()
-			.route("member",
-				p -> p.path("/api/member/**").uri("lb://member")
-			)
 			.route("auth",
 				p -> p.path("/api/auth/**").uri("lb://auth")
 			)
@@ -26,12 +23,10 @@ public class RouteLocatorConfig {
 					.path("/api/authors/**")
 					.or()
 					.path("/api/publishers/**")
+					.or()
+					.path("/api/member/**")
 					.uri("lb://books")
 			)
-			.route("view",
-				p -> p.path("/api/view/**").uri("lb://view")
-			)
 			.build();
-
 	}
 }

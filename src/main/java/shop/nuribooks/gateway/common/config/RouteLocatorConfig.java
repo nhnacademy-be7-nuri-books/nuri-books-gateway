@@ -27,6 +27,9 @@ public class RouteLocatorConfig {
 					.path("/api/member/**")
 					.uri("lb://books")
 			)
+			.route("view",
+				p -> p.path("/api/view/**").uri("lb://view")
+			)
 			.build();
 	}
 }

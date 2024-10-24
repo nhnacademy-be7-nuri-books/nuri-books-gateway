@@ -3,6 +3,27 @@ spring:
     name: gateway
   profiles:
     active: dev
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
+      globalCors:
+        cors-configurations:
+          '[/**]':
+            allowed-origins:
+              - "http://localhost:3000"
+              - "http://localhost:8081"
+              - "http://localhost:8080"
+              - "http://localhost:8083"
+            allow-credentials: true
+            allowed-headers:
+              - '*'
+            allowed-methods:
+              - PUT
+              - GET
+              - POST
+              - DELETE
+              - OPTIONS
 
 server:
   port: 8080

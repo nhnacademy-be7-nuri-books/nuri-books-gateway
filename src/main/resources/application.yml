@@ -3,6 +3,8 @@ spring:
     name: gateway
   profiles:
     active: dev
+  jwt:
+    secret: sksmsdydxordldiznjzkfkrhehqnfflwleprtmdkslazzxortmdlazztrdyddlrjsqlalfqjsghdia
   cloud:
     gateway:
       default-filters:

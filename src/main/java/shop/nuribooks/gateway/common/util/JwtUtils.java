@@ -9,7 +9,9 @@ import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureException;
 
 /**
  *  jwt Utils
@@ -73,5 +75,13 @@ public class JwtUtils {
 			.expiration(new Date(System.currentTimeMillis() + expiredMs))
 			.signWith(secretKey)
 			.compact();
+	}
+
+	public void validateToken(String token) throws ExpiredJwtException, SignatureException {
+		// 토큰 파싱 및 유효성 검사
+		Jwts.parser()
+			.setSigningKey(secretKey)
+			.build()
+			.parseClaimsJws(token);
 	}
 }

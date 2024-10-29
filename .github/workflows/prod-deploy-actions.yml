@@ -30,7 +30,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           source: "target/*.jar"
-          target: "~/gateway/gateway.jar"
+          target: "~/gateway"
           rm: true
 
       - name: execute shell script
@@ -41,4 +41,4 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script_stop: true
-          script: "./gateway/startup.sh"
+          script: "./startup.sh 8080 gateway"

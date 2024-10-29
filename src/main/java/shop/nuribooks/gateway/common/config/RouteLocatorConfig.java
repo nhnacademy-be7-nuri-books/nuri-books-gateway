@@ -5,7 +5,8 @@ import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import shop.nuribooks.gateway.common.filter.MemberJwtFilter;
+import shop.nuribooks.gateway.common.filter.GlobalJwtValidationFilter;
+import shop.nuribooks.gateway.common.filter.LoginFilter;
 import shop.nuribooks.gateway.common.filter.SignupFilter;
 
 /**
@@ -15,11 +16,14 @@ import shop.nuribooks.gateway.common.filter.SignupFilter;
 @Configuration
 public class RouteLocatorConfig {
 
-	private final MemberJwtFilter memberJwtFilter;
+	private final GlobalJwtValidationFilter globalJwtValidationFilter;
+	private final LoginFilter loginFilter;
 	private final SignupFilter signupFilter;
 
-	public RouteLocatorConfig(MemberJwtFilter memberJwtFilter, SignupFilter signupFilter) {
-		this.memberJwtFilter = memberJwtFilter;
+	public RouteLocatorConfig(GlobalJwtValidationFilter globalJwtValidationFilter, LoginFilter loginFilter,
+		SignupFilter signupFilter) {
+		this.globalJwtValidationFilter = globalJwtValidationFilter;
+		this.loginFilter = loginFilter;
 		this.signupFilter = signupFilter;
 	}
 
@@ -34,18 +38,22 @@ public class RouteLocatorConfig {
 		return builder.routes()
 			.route("books_route",
 				p -> p.path("/api/books/**")
+					.filters(f -> f.filter(globalJwtValidationFilter.apply(new GlobalJwtValidationFilter.Config())))
 					.uri("lb://books")
 			)
 			.route("categories_route",
 				p -> p.path("/api/categories/**")
+					.filters(f -> f.filter(globalJwtValidationFilter.apply(new GlobalJwtValidationFilter.Config())))
 					.uri("lb://books")
 			)
 			.route("authors_route",
 				p -> p.path("/api/authors/**")
+					.filters(f -> f.filter(globalJwtValidationFilter.apply(new GlobalJwtValidationFilter.Config())))
 					.uri("lb://books")
 			)
 			.route("publishers_route",
 				p -> p.path("/api/publishers/**")
+					.filters(f -> f.filter(globalJwtValidationFilter.apply(new GlobalJwtValidationFilter.Config())))
 					.uri("lb://books")
 			)
 			.route("member_route",
@@ -55,10 +63,12 @@ public class RouteLocatorConfig {
 			)
 			.route("member_route",
 				p -> p.path("/api/member/**")
+					.filters(f -> f.filter(globalJwtValidationFilter.apply(new GlobalJwtValidationFilter.Config())))
 					.uri("lb://books")
 			)
 			.route("auth",
 				p -> p.path("/api/auth/login")
+					.filters(f -> f.filter(loginFilter.apply(new LoginFilter.Config())))
 					.uri("lb://auth")
 			)
 			.route("auth",

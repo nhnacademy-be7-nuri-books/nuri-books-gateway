@@ -1,7 +1,9 @@
 package shop.nuribooks.gateway.common.filter;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.GatewayFilterFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
@@ -27,6 +29,8 @@ public class GlobalJwtValidationFilter implements GatewayFilterFactory<GlobalJwt
 
 	private final WebClient webClient;
 	private final JwtUtils jwtUtils;
+	@Value("${header.refresh-key-name}")
+	private String refreshHeaderName;
 
 	/**
 	 * 생성자
@@ -56,10 +60,10 @@ public class GlobalJwtValidationFilter implements GatewayFilterFactory<GlobalJwt
 			// Prev 요청의 헤더에서 jwt 가져오기
 			String accessToken = exchange.getRequest()
 				.getHeaders()
-				.getFirst("Authorization");
+				.getFirst(HttpHeaders.AUTHORIZATION);
 			String refreshToken = exchange.getRequest()
 				.getHeaders()
-				.getFirst("Refresh");
+				.getFirst(refreshHeaderName);
 
 			if (accessToken == null && refreshToken == null) {
 				return chain.filter(exchange);
@@ -76,29 +80,31 @@ public class GlobalJwtValidationFilter implements GatewayFilterFactory<GlobalJwt
 					.uri("/api/auth/reissue")
 					.headers(headers -> {
 						// jwt 를 재발행 요청 헤더에 추가
-						headers.add("Authorization", accessToken);
-						headers.add("Refresh", refreshToken);
+						headers.add(HttpHeaders.AUTHORIZATION, accessToken);
+						headers.add(refreshHeaderName, refreshToken);
 					})
 					.retrieve()
 					.toBodilessEntity() // 응답 본문을 무시하고 헤더만 가져옴
 					.flatMap(responseEntity -> {
 
 						// 재발행한 토큰
-						String newAcceptToken = responseEntity.getHeaders().getFirst("Authorization");
-						String newRefreshToken = responseEntity.getHeaders().getFirst("Set-Cookie");
+						String newAcceptToken = responseEntity.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+						String newRefreshToken = responseEntity.getHeaders().getFirst(HttpHeaders.SET_COOKIE);
 						// perv 요청 헤더의 토큰을 재발핼 된 토큰으로 변경
 						// 원래 요청하려면 prev 요청 생성
 						ServerHttpRequest mutatedRequest = exchange.getRequest()
 							.mutate()
-							.header("Authorization", newAcceptToken != null ? newAcceptToken : "")
-							.header("Set-Cookie", newRefreshToken != null ? newRefreshToken : "")
+							.header(HttpHeaders.AUTHORIZATION, newAcceptToken != null ? newAcceptToken : "")
+							.header(HttpHeaders.SET_COOKIE, newRefreshToken != null ? newRefreshToken : "")
 							.build();
 
 						// prev 응답에 토큰 정보 담아 응답
 						ServerHttpResponse response = exchange.getResponse();
 						response.beforeCommit(() -> {
-							response.getHeaders().add("Authorization", newAcceptToken != null ? newAcceptToken : "");
-							response.getHeaders().add("Set-Cookie", newRefreshToken != null ? newRefreshToken : "");
+							response.getHeaders()
+								.add(HttpHeaders.AUTHORIZATION, newAcceptToken != null ? newAcceptToken : "");
+							response.getHeaders()
+								.add(HttpHeaders.SET_COOKIE, newRefreshToken != null ? newRefreshToken : "");
 							return Mono.empty();
 						});
 

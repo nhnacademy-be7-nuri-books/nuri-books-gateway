@@ -34,7 +34,7 @@ public class LogFilter implements GlobalFilter {
 		return chain.filter(exchange).then(Mono.fromRunnable(() -> {
 			int statusCode = exchange.getResponse().getStatusCode() != null
 				? exchange.getResponse().getStatusCode().value() : 0;
-			log.info("Outgoing response: Status - {}", statusCode);
+			log.info("response 정보: Status - {}", statusCode);
 		}));
 	}
 }

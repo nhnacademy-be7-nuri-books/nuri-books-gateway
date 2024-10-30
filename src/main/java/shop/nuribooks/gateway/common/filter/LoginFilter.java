@@ -1,5 +1,6 @@
 package shop.nuribooks.gateway.common.filter;
 
+import org.apache.http.HttpHeaders;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.server.reactive.ServerHttpResponse;
@@ -34,7 +35,7 @@ public class LoginFilter extends AbstractGatewayFilterFactory<LoginFilter.Config
 		return (exchange, chain) -> {
 			ServerHttpResponse response = exchange.getResponse();
 			response.beforeCommit(() -> {
-				String jwtToken = response.getHeaders().getFirst("Authorization");
+				String jwtToken = response.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 				if (jwtToken != null) {
 					String token = jwtToken.substring(7);
 					String username = jwtUtils.getUsername(token);

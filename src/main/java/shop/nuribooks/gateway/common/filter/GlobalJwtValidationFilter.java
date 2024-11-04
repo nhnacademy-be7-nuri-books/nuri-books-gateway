@@ -5,9 +5,11 @@ import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.GatewayFilterFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.http.server.reactive.ServerHttpRequestDecorator;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.ServerWebExchange;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import reactor.core.publisher.Mono;
@@ -65,14 +67,36 @@ public class GlobalJwtValidationFilter implements GatewayFilterFactory<GlobalJwt
 				.getHeaders()
 				.getFirst(refreshHeaderName);
 
-			if (accessToken == null && refreshToken == null) {
+			if (accessToken == null || refreshToken == null) {
 				return chain.filter(exchange);
 			}
 
 			// AcceptToken 이 만료되지 않았다면 prev 요청 그대로
 			try {
 				jwtUtils.validateToken(accessToken);
-				return chain.filter(exchange);
+
+				String username = jwtUtils.getUsername(accessToken);
+				String role = jwtUtils.getRole(accessToken);
+
+				HttpHeaders headers = new HttpHeaders();
+				headers.putAll(exchange.getRequest().getHeaders());
+				headers.add("X-USER-ID", username);
+				headers.add("X-USER-ROLE", role);
+
+				// 새로운 ServerHttpRequestDecorator를 생성하여 헤더를 교체
+				ServerHttpRequest mutatedRequest = new ServerHttpRequestDecorator(exchange.getRequest()) {
+					@Override
+					public HttpHeaders getHeaders() {
+						return headers;
+					}
+				};
+
+				// 변경된 요청으로 Exchange 생성
+				ServerWebExchange mutatedExchange = exchange.mutate()
+					.request(mutatedRequest)
+					.build();
+
+				return chain.filter(mutatedExchange);
 				// AcceptToken 이 만료되었다면 재발행 요청
 			} catch (ExpiredJwtException e) {
 				// 재발행 요청

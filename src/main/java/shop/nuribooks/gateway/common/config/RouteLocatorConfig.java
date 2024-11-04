@@ -37,22 +37,8 @@ public class RouteLocatorConfig {
 
 		return builder.routes()
 			.route("books_route",
-				p -> p.path("/api/books/**")
-					.filters(f -> f.filter(globalJwtValidationFilter.apply(new GlobalJwtValidationFilter.Config())))
-					.uri("lb://books")
-			)
-			.route("categories_route",
-				p -> p.path("/api/categories/**")
-					.filters(f -> f.filter(globalJwtValidationFilter.apply(new GlobalJwtValidationFilter.Config())))
-					.uri("lb://books")
-			)
-			.route("authors_route",
-				p -> p.path("/api/authors/**")
-					.filters(f -> f.filter(globalJwtValidationFilter.apply(new GlobalJwtValidationFilter.Config())))
-					.uri("lb://books")
-			)
-			.route("publishers_route",
-				p -> p.path("/api/publishers/**")
+				p -> p.path("/api/books/**", "/api/categories/**", "/api/contributors/**", "/api/reviews/**",
+						"/api//**")
 					.filters(f -> f.filter(globalJwtValidationFilter.apply(new GlobalJwtValidationFilter.Config())))
 					.uri("lb://books")
 			)

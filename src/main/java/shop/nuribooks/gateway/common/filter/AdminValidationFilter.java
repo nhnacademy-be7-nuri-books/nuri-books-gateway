@@ -1,0 +1,94 @@
+package shop.nuribooks.gateway.common.filter;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.gateway.filter.GatewayFilter;
+import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
+
+import io.jsonwebtoken.ExpiredJwtException;
+import reactor.core.publisher.Mono;
+import shop.nuribooks.gateway.common.util.JwtUtils;
+
+/**
+ * Admin 관련 요청 jwt 토근 검증
+ *
+ * <p>
+ * Admin 권한이 아니거나 토큰이 없다면 401 error
+ * </p>
+ * @author nuri
+ */
+@Component
+public class AdminValidationFilter extends AbstractGatewayFilterFactory<AdminValidationFilter.Config> {
+
+	private final JwtUtils jwtUtils;
+	@Value("${header.refresh-key-name}")
+	private String refreshHeaderName;
+
+	/**
+	 * 생성자
+	 * @param jwtUtils jwt 처리 유틸리티
+	 */
+	public AdminValidationFilter(JwtUtils jwtUtils) {
+		super(AdminValidationFilter.Config.class);
+		this.jwtUtils = jwtUtils;
+	}
+
+	/**
+	 * 관리자 인가 필터
+	 *
+	 * @param config AdminValidationFilter.Confi
+	 * @return chain.filter
+	 */
+	@Override
+	public GatewayFilter apply(Config config) {
+		return (exchange, chain) -> {
+			String accessToken = exchange.getRequest()
+				.getHeaders()
+				.getFirst(HttpHeaders.AUTHORIZATION);
+			String refreshToken = exchange.getRequest()
+				.getHeaders()
+				.getFirst(refreshHeaderName);
+
+			if (accessToken == null || refreshToken == null) {
+				exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+				exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
+				String errorResponseBody =
+					"{\"status\": 401, \"message\": \"UNAUTHORIZED\", \"details\": \"UNAUTHORIZED\"}";
+
+				return exchange.getResponse().writeWith(Mono.just(exchange.getResponse()
+					.bufferFactory()
+					.wrap(errorResponseBody.getBytes())));
+			}
+
+			try {
+				jwtUtils.validateToken(accessToken);
+
+				String role = jwtUtils.getRole(accessToken);
+
+				if (role.equals("ADMIN")) {
+					exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+					exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
+					String errorResponseBody =
+						"{\"status\": 401, \"message\": \"UNAUTHORIZED\", \"details\": \"UNAUTHORIZED\"}";
+
+					return exchange.getResponse().writeWith(Mono.just(exchange.getResponse()
+						.bufferFactory()
+						.wrap(errorResponseBody.getBytes())));
+				}
+			} catch (ExpiredJwtException e) {
+				return chain.filter(exchange);
+			}
+
+			// 다음 필터로 넘어가지 않고 필터 종료
+			return exchange.getResponse().setComplete();
+		};
+	}
+
+	public static class Config {
+	}
+}

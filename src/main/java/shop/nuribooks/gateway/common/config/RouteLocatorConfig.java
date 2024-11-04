@@ -5,6 +5,7 @@ import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import shop.nuribooks.gateway.common.filter.AdminValidationFilter;
 import shop.nuribooks.gateway.common.filter.GlobalJwtValidationFilter;
 import shop.nuribooks.gateway.common.filter.LoginFilter;
 import shop.nuribooks.gateway.common.filter.SignupFilter;
@@ -19,12 +20,14 @@ public class RouteLocatorConfig {
 	private final GlobalJwtValidationFilter globalJwtValidationFilter;
 	private final LoginFilter loginFilter;
 	private final SignupFilter signupFilter;
+	private final AdminValidationFilter adminValidationFilter;
 
 	public RouteLocatorConfig(GlobalJwtValidationFilter globalJwtValidationFilter, LoginFilter loginFilter,
-		SignupFilter signupFilter) {
+		SignupFilter signupFilter, AdminValidationFilter adminValidationFilter) {
 		this.globalJwtValidationFilter = globalJwtValidationFilter;
 		this.loginFilter = loginFilter;
 		this.signupFilter = signupFilter;
+		this.adminValidationFilter = adminValidationFilter;
 	}
 
 	/**
@@ -36,6 +39,10 @@ public class RouteLocatorConfig {
 	public RouteLocator myRoute(RouteLocatorBuilder builder) {
 
 		return builder.routes()
+			.route("admin_route", p -> p.path("/admin/**")
+				.filters(f -> f.stripPrefix(1)
+					.filter(adminValidationFilter.apply(new AdminValidationFilter.Config())))
+				.uri("lb://books"))
 			.route("books_route",
 				p -> p.path("/api/books/**", "/api/categories/**", "/api/contributors/**", "/api/reviews/**",
 						"/api//**")

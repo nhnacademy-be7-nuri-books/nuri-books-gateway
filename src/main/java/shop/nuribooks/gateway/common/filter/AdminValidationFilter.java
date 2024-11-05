@@ -7,6 +7,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebExchange;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import reactor.core.publisher.Mono;
@@ -48,20 +49,9 @@ public class AdminValidationFilter extends AbstractGatewayFilterFactory<AdminVal
 			String accessToken = exchange.getRequest()
 				.getHeaders()
 				.getFirst(HttpHeaders.AUTHORIZATION);
-			String refreshToken = exchange.getRequest()
-				.getHeaders()
-				.getFirst(refreshHeaderName);
 
-			if (accessToken == null || refreshToken == null) {
-				exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-				exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
-
-				String errorResponseBody =
-					"{\"status\": 401, \"message\": \"UNAUTHORIZED\", \"details\": \"UNAUTHORIZED\"}";
-
-				return exchange.getResponse().writeWith(Mono.just(exchange.getResponse()
-					.bufferFactory()
-					.wrap(errorResponseBody.getBytes())));
+			if (accessToken == null) {
+				return unauthorizedResponse(exchange);
 			}
 
 			try {
@@ -70,23 +60,33 @@ public class AdminValidationFilter extends AbstractGatewayFilterFactory<AdminVal
 				String role = jwtUtils.getRole(accessToken);
 
 				if (role.equals("ADMIN")) {
-					exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-					exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
-
-					String errorResponseBody =
-						"{\"status\": 401, \"message\": \"UNAUTHORIZED\", \"details\": \"UNAUTHORIZED\"}";
-
-					return exchange.getResponse().writeWith(Mono.just(exchange.getResponse()
-						.bufferFactory()
-						.wrap(errorResponseBody.getBytes())));
+					return unauthorizedResponse(exchange);
 				}
 			} catch (ExpiredJwtException e) {
+				//재갱신을 해서 다음 필터로
 				return chain.filter(exchange);
 			}
 
 			// 다음 필터로 넘어가지 않고 필터 종료
 			return exchange.getResponse().setComplete();
 		};
+	}
+
+	/**
+	 * 401 UNAUTHORIZED 응답을 반환
+	 *
+	 * @param exchange 요청-응답 교환 객체
+	 * @return 401 응답 반환
+	 */
+	private Mono<Void> unauthorizedResponse(ServerWebExchange exchange) {
+		exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+		exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
+		String errorResponseBody = "{\"status\": 401, \"message\": \"UNAUTHORIZED\", \"details\": \"UNAUTHORIZED\"}";
+
+		return exchange.getResponse().writeWith(Mono.just(
+			exchange.getResponse().bufferFactory().wrap(errorResponseBody.getBytes())
+		));
 	}
 
 	public static class Config {

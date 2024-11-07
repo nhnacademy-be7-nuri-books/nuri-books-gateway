@@ -26,14 +26,15 @@ public class JwtUtils {
 			Jwts.SIG.HS256.key().build().getAlgorithm());
 	}
 
-	public String getUsername(String token) {
+	public String getUserId(String token) {
+
 		return Jwts
 			.parser()
 			.verifyWith(secretKey)
 			.build()
 			.parseSignedClaims(token)
 			.getPayload()
-			.get("username", String.class);
+			.get("userId", String.class);
 	}
 
 	public String getRole(String token) {
@@ -66,16 +67,6 @@ public class JwtUtils {
 			.get("category", String.class);
 	}
 
-	public String createJwt(String category, String username, String role, Long expiredMs) {
-		return Jwts.builder()
-			.claim("category", category)
-			.claim("username", username)
-			.claim("role", role)
-			.issuedAt(new Date(System.currentTimeMillis()))
-			.expiration(new Date(System.currentTimeMillis() + expiredMs))
-			.signWith(secretKey)
-			.compact();
-	}
 
 	public void validateToken(String token) throws ExpiredJwtException, SignatureException {
 		// 토큰 파싱 및 유효성 검사

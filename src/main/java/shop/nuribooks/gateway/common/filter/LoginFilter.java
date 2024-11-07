@@ -38,8 +38,9 @@ public class LoginFilter extends AbstractGatewayFilterFactory<LoginFilter.Config
 				String jwtToken = response.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 				if (jwtToken != null) {
 					String token = jwtToken.substring(7);
-					String username = jwtUtils.getUsername(token);
-					response.getHeaders().add("X-USER-ID", username);
+					String userId = jwtUtils.getUserId(token);
+					response.getHeaders().add("X-USER-ID", userId);
+
 				}
 				return Mono.empty();
 			});

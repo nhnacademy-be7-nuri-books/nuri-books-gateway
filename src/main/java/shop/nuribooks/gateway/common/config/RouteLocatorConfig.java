@@ -5,7 +5,7 @@ import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import shop.nuribooks.gateway.common.filter.GlobalJwtValidationFilter;
+import shop.nuribooks.gateway.common.filter.AdminValidationFilter;
 import shop.nuribooks.gateway.common.filter.LoginFilter;
 import shop.nuribooks.gateway.common.filter.SignupFilter;
 
@@ -16,15 +16,18 @@ import shop.nuribooks.gateway.common.filter.SignupFilter;
 @Configuration
 public class RouteLocatorConfig {
 
-	private final GlobalJwtValidationFilter globalJwtValidationFilter;
 	private final LoginFilter loginFilter;
 	private final SignupFilter signupFilter;
+	private final AdminValidationFilter adminValidationFilter;
 
-	public RouteLocatorConfig(GlobalJwtValidationFilter globalJwtValidationFilter, LoginFilter loginFilter,
-		SignupFilter signupFilter) {
-		this.globalJwtValidationFilter = globalJwtValidationFilter;
+	public RouteLocatorConfig(
+		LoginFilter loginFilter,
+		SignupFilter signupFilter,
+		AdminValidationFilter adminValidationFilter) {
 		this.loginFilter = loginFilter;
 		this.signupFilter = signupFilter;
+		this.adminValidationFilter = adminValidationFilter;
+
 	}
 
 	/**
@@ -36,20 +39,33 @@ public class RouteLocatorConfig {
 	public RouteLocator myRoute(RouteLocatorBuilder builder) {
 
 		return builder.routes()
+			// ADMIN
+			.route("admin_route", p -> p.path("/admin/**")
+				.filters(f -> f.stripPrefix(1)
+					.filter(adminValidationFilter.apply(new AdminValidationFilter.Config())))
+				.uri("lb://books")
+			)
+			// BOOK
 			.route("books_route",
-				p -> p.path("/api/books/**", "/api/categories/**", "/api/contributors/**", "/api/reviews/**",
-						"/api//**")
-					.filters(f -> f.filter(globalJwtValidationFilter.apply(new GlobalJwtValidationFilter.Config())))
+				p -> p.path("/api/books/**", "/api/categories/**", "/api/contributors/**", "/api/reviews/**")
 					.uri("lb://books")
 			)
+			// MEMBER REGISTER
 			.route("member_route",
 				p -> p.path("/api/member")
 					.filters(f -> f.filter(signupFilter.apply(new SignupFilter.Config())))
 					.uri("lb://books")
 			)
+			// MEMBER MODIFY
+			// .route("member_route",
+			// 	p -> p.path("/api/member/me")
+			// 		.and().method("POST")
+			// 		.filters(f -> f.filter(modifyFilter.apply(new SignupFilter.Config())))
+			// 		.uri("lb://books")
+			// )
+			// MEMBER
 			.route("member_route",
 				p -> p.path("/api/member/**")
-					.filters(f -> f.filter(globalJwtValidationFilter.apply(new GlobalJwtValidationFilter.Config())))
 					.uri("lb://books")
 			)
 			.route("auth",

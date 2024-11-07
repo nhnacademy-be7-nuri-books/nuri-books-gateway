@@ -27,6 +27,7 @@ public class RouteLocatorConfig {
 		this.loginFilter = loginFilter;
 		this.signupFilter = signupFilter;
 		this.adminValidationFilter = adminValidationFilter;
+
 	}
 
 	/**

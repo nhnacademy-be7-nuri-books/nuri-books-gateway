@@ -27,6 +27,7 @@ public class JwtUtils {
 	}
 
 	public String getUserId(String token) {
+
 		return Jwts
 			.parser()
 			.verifyWith(secretKey)
@@ -65,6 +66,7 @@ public class JwtUtils {
 			.getPayload()
 			.get("category", String.class);
 	}
+
 
 	public void validateToken(String token) throws ExpiredJwtException, SignatureException {
 		// 토큰 파싱 및 유효성 검사

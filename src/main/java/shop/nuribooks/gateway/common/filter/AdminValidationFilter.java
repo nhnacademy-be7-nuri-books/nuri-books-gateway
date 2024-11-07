@@ -24,6 +24,7 @@ import shop.nuribooks.gateway.common.util.JwtUtils;
 @Component
 public class AdminValidationFilter extends AbstractGatewayFilterFactory<AdminValidationFilter.Config> {
 
+	public static final String ROLE_ADMIN = "ROLE_ADMIN";
 	private final JwtUtils jwtUtils;
 	@Value("${header.refresh-key-name}")
 	private String refreshHeaderName;
@@ -40,7 +41,7 @@ public class AdminValidationFilter extends AbstractGatewayFilterFactory<AdminVal
 	/**
 	 * 관리자 인가 필터
 	 *
-	 * @param config AdminValidationFilter.Confi
+	 * @param config AdminValidationFilter.Config
 	 * @return chain.filter
 	 */
 	@Override
@@ -59,16 +60,18 @@ public class AdminValidationFilter extends AbstractGatewayFilterFactory<AdminVal
 
 				String role = jwtUtils.getRole(accessToken);
 
-				if (role.equals("ADMIN")) {
-					return unauthorizedResponse(exchange);
+				if (role.equals(ROLE_ADMIN)) {
+					return chain.filter(exchange);
 				}
+
+				return unauthorizedResponse(exchange);
+
 			} catch (ExpiredJwtException e) {
-				//재갱신을 해서 다음 필터로
-				return chain.filter(exchange);
+				return unauthorizedResponse(exchange);
 			}
 
 			// 다음 필터로 넘어가지 않고 필터 종료
-			return exchange.getResponse().setComplete();
+			//return exchange.getResponse().setComplete();
 		};
 	}
 

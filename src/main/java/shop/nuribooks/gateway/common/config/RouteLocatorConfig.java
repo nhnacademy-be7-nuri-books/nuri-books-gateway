@@ -53,7 +53,7 @@ public class RouteLocatorConfig {
 			)
 			// MEMBER REGISTER
 			.route("member_route",
-				p -> p.path("/api/member")
+				p -> p.path("/api/members")
 					.and().method("POST")
 					.filters(f -> f.filter(signupFilter.apply(new SignupFilter.Config())))
 					.uri("lb://books")
@@ -67,7 +67,7 @@ public class RouteLocatorConfig {
 			// )
 			// MEMBER
 			.route("member_route",
-				p -> p.path("/api/member/**")
+				p -> p.path("/api/members/**")
 					// todo : 멤버 검증용 필터 추가 예정
 					.uri("lb://books")
 			)

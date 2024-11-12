@@ -43,6 +43,14 @@ public class GlobalTokenValidationFilter implements GlobalFilter {
 			return chain.filter(exchange);
 		}
 
+		// 재발행의 경우 필터 통과
+		String path = exchange.getRequest().getURI().getPath();
+
+		// 특정 라우터에서 필터를 제외
+		if (path.equals("/api/auth/reissue")) {
+			return chain.filter(exchange);
+		}
+
 		try {
 			jwtUtils.validateToken(accessToken);
 

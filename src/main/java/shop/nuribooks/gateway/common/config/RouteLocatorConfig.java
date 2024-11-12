@@ -48,7 +48,12 @@ public class RouteLocatorConfig {
 			// BOOK
 			.route("books_route",
 				p -> p.path("/api/books/**", "/api/categories/**", "/api/contributors/**", "/api/reviews/**",
-						"/api/publishers/**", "/api/book-tags/**")
+						"/api/publishers/**", "/api/book-tags/**", "/api/reviews/**")
+					.uri("lb://books")
+			)
+			// ORDER
+			.route("books_route",
+				p -> p.path("/api/orders/**", "/api/payments/**", "/api/shippings/**", "/api/wrapping/**")
 					.uri("lb://books")
 			)
 			// MEMBER REGISTER
@@ -60,14 +65,14 @@ public class RouteLocatorConfig {
 			)
 			// todo : MEMBER MODIFY
 			// .route("member_route",
-			// 	p -> p.path("/api/member/me")
+			// 	p -> p.path("/api/members/me")
 			// 		.and().method("POST")
 			// 		.filters(f -> f.filter(modifyFilter.apply(new SignupFilter.Config())))
 			// 		.uri("lb://books")
 			// )
 			// MEMBER
 			.route("member_route",
-				p -> p.path("/api/member/**")
+				p -> p.path("/api/members/**")
 					// todo : 멤버 검증용 필터 추가 예정
 					.uri("lb://books")
 			)

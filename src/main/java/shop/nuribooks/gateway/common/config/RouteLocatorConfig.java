@@ -48,7 +48,7 @@ public class RouteLocatorConfig {
 			// BOOK
 			.route("books_route",
 				p -> p.path("/api/books/**", "/api/categories/**", "/api/contributors/**", "/api/reviews/**",
-						"/api/publishers/**", "/api/book-tags/**", "/api/reviews/**")
+						"/api/publishers/**", "/api/book-tags/**", "/api/carts/**")
 					.uri("lb://books")
 			)
 			// ORDER

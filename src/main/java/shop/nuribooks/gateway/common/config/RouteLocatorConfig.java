@@ -53,7 +53,7 @@ public class RouteLocatorConfig {
 			)
 			// MEMBER REGISTER
 			.route("member_route",
-				p -> p.path("/api/member")
+				p -> p.path("/api/members")
 					.filters(f -> f.filter(signupFilter.apply(new SignupFilter.Config())))
 					.uri("lb://books")
 			)

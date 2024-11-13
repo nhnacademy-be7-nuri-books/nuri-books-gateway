@@ -72,7 +72,8 @@ public class RouteLocatorConfig {
 			// )
 			// MEMBER
 			.route("member_route",
-				p -> p.path("/api/members/**")
+				p -> p.path("/api/members/**", "/api/point-policies/**",
+						"/api/point-history/**")
 					// todo : 멤버 검증용 필터 추가 예정
 					.uri("lb://books")
 			)

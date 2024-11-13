@@ -48,33 +48,41 @@ public class RouteLocatorConfig {
 			// BOOK
 			.route("books_route",
 				p -> p.path("/api/books/**", "/api/categories/**", "/api/contributors/**", "/api/reviews/**",
-								"/api/publishers/**", "/api/book-tags/**")
+						"/api/publishers/**", "/api/book-tags/**", "/api/cart/**")
+					.uri("lb://books")
+			)
+			// ORDER
+			.route("orders_route",
+				p -> p.path("/api/orders/**", "/api/payments/**", "/api/shippings/**", "/api/wrapping/**")
 					.uri("lb://books")
 			)
 			// MEMBER REGISTER
-			.route("member_route",
-				p -> p.path("/api/member")
+			.route("member_register_route",
+				p -> p.path("/api/members")
+					.and().method("POST")
 					.filters(f -> f.filter(signupFilter.apply(new SignupFilter.Config())))
 					.uri("lb://books")
 			)
-			// MEMBER MODIFY
+			// todo : MEMBER MODIFY
 			// .route("member_route",
-			// 	p -> p.path("/api/member/me")
+			// 	p -> p.path("/api/members/me")
 			// 		.and().method("POST")
 			// 		.filters(f -> f.filter(modifyFilter.apply(new SignupFilter.Config())))
 			// 		.uri("lb://books")
 			// )
 			// MEMBER
 			.route("member_route",
-				p -> p.path("/api/member/**")
+				p -> p.path("/api/members/**", "/api/point-policies/**",
+						"/api/point-history/**")
+					// todo : 멤버 검증용 필터 추가 예정
 					.uri("lb://books")
 			)
-			.route("auth",
+			.route("auth_login",
 				p -> p.path("/api/auth/login")
 					.filters(f -> f.filter(loginFilter.apply(new LoginFilter.Config())))
 					.uri("lb://auth")
 			)
-			.route("auth",
+			.route("auth_route",
 				p -> p.path("/api/auth/**")
 					.uri("lb://auth")
 			)

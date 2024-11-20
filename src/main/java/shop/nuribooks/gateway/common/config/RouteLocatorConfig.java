@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 
 import shop.nuribooks.gateway.common.filter.AdminValidationFilter;
 import shop.nuribooks.gateway.common.filter.LoginFilter;
+import shop.nuribooks.gateway.common.filter.MemberModifyFilter;
 import shop.nuribooks.gateway.common.filter.SignupFilter;
 
 /**
@@ -16,18 +17,26 @@ import shop.nuribooks.gateway.common.filter.SignupFilter;
 @Configuration
 public class RouteLocatorConfig {
 
+	// 로그인 필터
 	private final LoginFilter loginFilter;
+
+	// 로그아웃 필터
 	private final SignupFilter signupFilter;
+
+	// 관리자 검증 필터
 	private final AdminValidationFilter adminValidationFilter;
+
+	// 멤버 수정 필터
+	private final MemberModifyFilter memberModifyFilter;
 
 	public RouteLocatorConfig(
 		LoginFilter loginFilter,
 		SignupFilter signupFilter,
-		AdminValidationFilter adminValidationFilter) {
+		AdminValidationFilter adminValidationFilter, MemberModifyFilter memberModifyFilter) {
 		this.loginFilter = loginFilter;
 		this.signupFilter = signupFilter;
 		this.adminValidationFilter = adminValidationFilter;
-
+		this.memberModifyFilter = memberModifyFilter;
 	}
 
 	/**
@@ -48,7 +57,7 @@ public class RouteLocatorConfig {
 			// BOOK
 			.route("books_route",
 				p -> p.path("/api/books/**", "/api/categories/**", "/api/contributors/**", "/api/reviews/**",
-						"/api/publishers/**", "/api/book-tags/**", "/api/cart/**")
+						"/api/publishers/**", "/api/book-tags/**", "/api/cart/**", "/api/coupons/**")
 					.uri("lb://books")
 			)
 			// ORDER
@@ -64,12 +73,12 @@ public class RouteLocatorConfig {
 					.uri("lb://books")
 			)
 			// todo : MEMBER MODIFY
-			// .route("member_route",
-			// 	p -> p.path("/api/members/me")
-			// 		.and().method("POST")
-			// 		.filters(f -> f.filter(modifyFilter.apply(new SignupFilter.Config())))
-			// 		.uri("lb://books")
-			// )
+			.route("member_route",
+				p -> p.path("/api/members/me")
+					.and().method("PUT")
+					.filters(f -> f.filter(memberModifyFilter.apply(new MemberModifyFilter.Config())))
+					.uri("lb://books")
+			)
 			// MEMBER
 			.route("member_route",
 				p -> p.path("/api/members/**", "/api/point-policies/**",

@@ -62,7 +62,7 @@ public class CustomerOrderRegisterRewrite implements RewriteFunction<String, Str
 		for (Map.Entry<String, Object> entry : map.entrySet()) {
 			if (entry.getKey().equals("customerRegister")) {
 				Map<String, Object> subMap = (Map<String, Object>)entry.getValue();
-				if (subMap.containsKey("password")) {
+				if (subMap != null && subMap.containsKey("password")) {
 					String prevPassword = (String)subMap.get("password");
 					String changedPassword = bcryptPasswordEncoder.encode(prevPassword);
 					subMap.put("password", changedPassword);

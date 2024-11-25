@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
 /**
- * 패스워드 본문을 재작성하는 필터
+ * 비회원 주문의 본문을 재작성하는 필터
  *
  * <p>
  * BCryptPasswordEncoder를 사용하여 비밀번호를 해시화
@@ -26,7 +26,7 @@ import reactor.core.publisher.Mono;
  */
 @Slf4j
 @Service
-public class MemberPasswordRequestBodyRewrite implements RewriteFunction<String, String> {
+public class CustomerOrderRegisterRewrite implements RewriteFunction<String, String> {
 
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -44,13 +44,7 @@ public class MemberPasswordRequestBodyRewrite implements RewriteFunction<String,
 			Map<String, Object> map = objectMapper.readValue(body, new TypeReference<Map<String, Object>>() {
 			});
 
-			BCryptPasswordEncoder bcryptPasswordEncoder = new BCryptPasswordEncoder();
-
-			if (map.containsKey("password")) {
-				String prevPassword = (String)map.get("password");
-				String changedPassword = bcryptPasswordEncoder.encode(prevPassword);
-				map.put("password", changedPassword);
-			}
+			processPassword(map);
 
 			return Mono.just(objectMapper.writeValueAsString(map));
 
@@ -59,6 +53,21 @@ public class MemberPasswordRequestBodyRewrite implements RewriteFunction<String,
 			log.error("RequestBodyRewrite 의 request body 를 json 으로 변환하는 중 예외가 발생했습니다.");
 
 			throw new RuntimeException("RequestBodyRewrite 의 request body 를 json 으로 변환하는 중 예외가 발생했습니다.");
+		}
+	}
+
+	private void processPassword(Map<String, Object> map) {
+		BCryptPasswordEncoder bcryptPasswordEncoder = new BCryptPasswordEncoder();
+
+		for (Map.Entry<String, Object> entry : map.entrySet()) {
+			if (entry.getKey().equals("customerRegister")) {
+				Map<String, Object> subMap = (Map<String, Object>)entry.getValue();
+				if (subMap.containsKey("password")) {
+					String prevPassword = (String)subMap.get("password");
+					String changedPassword = bcryptPasswordEncoder.encode(prevPassword);
+					subMap.put("password", changedPassword);
+				}
+			}
 		}
 	}
 }

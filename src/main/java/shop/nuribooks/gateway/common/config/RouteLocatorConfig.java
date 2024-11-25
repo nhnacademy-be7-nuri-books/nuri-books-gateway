@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import shop.nuribooks.gateway.common.filter.AdminValidationFilter;
+import shop.nuribooks.gateway.common.filter.CustomerOrderFilter;
 import shop.nuribooks.gateway.common.filter.LoginFilter;
 import shop.nuribooks.gateway.common.filter.MemberModifyFilter;
 import shop.nuribooks.gateway.common.filter.SignupFilter;
@@ -29,14 +30,20 @@ public class RouteLocatorConfig {
 	// 멤버 수정 필터
 	private final MemberModifyFilter memberModifyFilter;
 
+	// 주문 필터
+	private final CustomerOrderFilter customerOrderFilter;
+
 	public RouteLocatorConfig(
 		LoginFilter loginFilter,
 		SignupFilter signupFilter,
-		AdminValidationFilter adminValidationFilter, MemberModifyFilter memberModifyFilter) {
+		AdminValidationFilter adminValidationFilter,
+		MemberModifyFilter memberModifyFilter,
+		CustomerOrderFilter customerOrderFilter) {
 		this.loginFilter = loginFilter;
 		this.signupFilter = signupFilter;
 		this.adminValidationFilter = adminValidationFilter;
 		this.memberModifyFilter = memberModifyFilter;
+		this.customerOrderFilter = customerOrderFilter;
 	}
 
 	/**
@@ -57,7 +64,15 @@ public class RouteLocatorConfig {
 			// BOOK
 			.route("books_route",
 				p -> p.path("/api/books/**", "/api/categories/**", "/api/contributors/**", "/api/reviews/**",
-                    "/api/publishers/**", "/api/book-tags/**", "/api/cart/**", "/api/coupons/**", "/api/member-coupons/**", "/api/image/**")
+						"/api/publishers/**", "/api/book-tags/**", "/api/cart/**", "/api/coupons/**",
+						"/api/member-coupons/**", "/api/image/**")
+					.uri("lb://books")
+			)
+			// CUSTOMER ORDER REGISTER
+			.route("order_register_route",
+				p -> p.path("/api/orders")
+					.and().method("POST")
+					.filters(f -> f.filter(customerOrderFilter.apply(new CustomerOrderFilter.Config())))
 					.uri("lb://books")
 			)
 			// ORDER
@@ -72,8 +87,8 @@ public class RouteLocatorConfig {
 					.filters(f -> f.filter(signupFilter.apply(new SignupFilter.Config())))
 					.uri("lb://books")
 			)
-			// todo : MEMBER MODIFY
-			.route("member_route",
+			// MEMBER MODIFY
+			.route("member_modify",
 				p -> p.path("/api/members/me")
 					.and().method("PUT")
 					.filters(f -> f.filter(memberModifyFilter.apply(new MemberModifyFilter.Config())))
@@ -83,7 +98,6 @@ public class RouteLocatorConfig {
 			.route("member_route",
 				p -> p.path("/api/members/**", "/api/point-policies/**",
 						"/api/point-history/**")
-					// todo : 멤버 검증용 필터 추가 예정
 					.uri("lb://books")
 			)
 			.route("auth_login",

@@ -75,7 +75,7 @@ public class GlobalTokenValidationFilter implements GlobalFilter {
 				.request(mutatedRequest)
 				.build();
 
-			log.error("X-USER-ID, X-USER-ROLE 전달");
+			log.debug("X-USER-ID, X-USER-ROLE 전달");
 			return chain.filter(mutatedExchange);
 
 		} catch (ExpiredJwtException r) {

@@ -69,9 +69,7 @@ public class MemberValidationFilter extends AbstractGatewayFilterFactory<MemberV
 			} catch (ExpiredJwtException e) {
 				return unauthorizedResponse(exchange);
 			}
-
-			// 다음 필터로 넘어가지 않고 필터 종료
-			//return exchange.getResponse().setComplete();
+			
 		};
 	}
 

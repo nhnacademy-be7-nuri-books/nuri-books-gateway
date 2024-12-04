@@ -29,6 +29,7 @@ import reactor.core.publisher.Mono;
 public class SignupRequestBodyRewrite implements RewriteFunction<String, String> {
 
 	private final ObjectMapper objectMapper = new ObjectMapper();
+	private static final String PASSWORD_FIELD = "password";
 
 	/**
 	 * 주어진 요청 본문에서 비밀번호를 해시화
@@ -47,9 +48,9 @@ public class SignupRequestBodyRewrite implements RewriteFunction<String, String>
 			BCryptPasswordEncoder bcryptPasswordEncoder = new BCryptPasswordEncoder();
 
 			if (map.containsKey("name")) {
-				String prevPassword = (String)map.get("password");
+				String prevPassword = (String)map.get(PASSWORD_FIELD);
 				String changedPassword = bcryptPasswordEncoder.encode(prevPassword);
-				map.put("password", changedPassword);
+				map.put(PASSWORD_FIELD, changedPassword);
 			}
 
 			return Mono.just(objectMapper.writeValueAsString(map));
@@ -58,7 +59,7 @@ public class SignupRequestBodyRewrite implements RewriteFunction<String, String>
 
 			log.error("RequestBodyRewrite 의 request body 를 json 으로 변환하는 중 예외가 발생했습니다.");
 
-			throw new RuntimeException("RequestBodyRewrite 의 request body 를 json 으로 변환하는 중 예외가 발생했습니다.");
+			return Mono.error(new RuntimeException("RequestBodyRewrite 의 request body 를 json 으로 변환하는 중 예외가 발생했습니다."));
 		}
 	}
 }

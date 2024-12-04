@@ -28,7 +28,9 @@ import reactor.core.publisher.Mono;
 @Service
 public class CustomerOrderRegisterRewrite implements RewriteFunction<String, String> {
 
+	//private static String
 	private final ObjectMapper objectMapper = new ObjectMapper();
+	private static final String PASSWORD_FIELD = "password";
 
 	/**
 	 * 주어진 요청 본문에서 비밀번호를 해시화
@@ -52,7 +54,7 @@ public class CustomerOrderRegisterRewrite implements RewriteFunction<String, Str
 
 			log.error("RequestBodyRewrite 의 request body 를 json 으로 변환하는 중 예외가 발생했습니다.");
 
-			throw new RuntimeException("RequestBodyRewrite 의 request body 를 json 으로 변환하는 중 예외가 발생했습니다.");
+			return Mono.error(new RuntimeException("RequestBodyRewrite 의 request body 를 json 으로 변환하는 중 예외가 발생했습니다."));
 		}
 	}
 
@@ -61,11 +63,12 @@ public class CustomerOrderRegisterRewrite implements RewriteFunction<String, Str
 
 		for (Map.Entry<String, Object> entry : map.entrySet()) {
 			if (entry.getKey().equals("customerRegister")) {
+				@SuppressWarnings("unchecked")
 				Map<String, Object> subMap = (Map<String, Object>)entry.getValue();
-				if (subMap != null && subMap.containsKey("password")) {
-					String prevPassword = (String)subMap.get("password");
+				if (subMap != null && subMap.containsKey(PASSWORD_FIELD)) {
+					String prevPassword = (String)subMap.get(PASSWORD_FIELD);
 					String changedPassword = bcryptPasswordEncoder.encode(prevPassword);
-					subMap.put("password", changedPassword);
+					subMap.put(PASSWORD_FIELD, changedPassword);
 				}
 			}
 		}

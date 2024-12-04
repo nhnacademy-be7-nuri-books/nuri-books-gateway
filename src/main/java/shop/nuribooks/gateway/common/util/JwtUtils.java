@@ -58,16 +58,6 @@ public class JwtUtils {
 			.before(new Date());
 	}
 
-	public String getCategory(String token) {
-		return Jwts
-			.parser()
-			.verifyWith(secretKey)
-			.build().parseSignedClaims(token)
-			.getPayload()
-			.get("category", String.class);
-	}
-
-
 	public void validateToken(String token) throws ExpiredJwtException, SignatureException {
 		// 토큰 파싱 및 유효성 검사
 		Jwts.parser()

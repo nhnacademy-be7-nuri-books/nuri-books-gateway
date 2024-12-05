@@ -18,6 +18,8 @@ import shop.nuribooks.gateway.common.filter.SignupFilter;
 @Configuration
 public class RouteLocatorConfig {
 
+	public static final String BOOK_ROUTER = "lb://books";
+
 	// 로그인 필터
 	private final LoginFilter loginFilter;
 
@@ -59,46 +61,46 @@ public class RouteLocatorConfig {
 			.route("admin_route", p -> p.path("/admin/**")
 				.filters(f -> f.stripPrefix(1)
 					.filter(adminValidationFilter.apply(new AdminValidationFilter.Config())))
-				.uri("lb://books")
+				.uri(BOOK_ROUTER)
 			)
 			// BOOK
 			.route("books_route",
 				p -> p.path("/api/books/**", "/api/categories/**", "/api/contributors/**", "/api/reviews/**",
 						"/api/publishers/**", "/api/book-tags/**", "/api/cart/**", "/api/coupon-policies/**",
 						"/api/coupon-templates/**", "/api/member-coupons/**", "/api/image/**")
-					.uri("lb://books")
+					.uri(BOOK_ROUTER)
 			)
 			// CUSTOMER ORDER REGISTER
 			.route("order_register_route",
 				p -> p.path("/api/orders")
 					.and().method("POST")
 					.filters(f -> f.filter(customerOrderFilter.apply(new CustomerOrderFilter.Config())))
-					.uri("lb://books")
+					.uri(BOOK_ROUTER)
 			)
 			// ORDER
 			.route("orders_route",
 				p -> p.path("/api/orders/**", "/api/payments/**", "/api/shippings/**", "/api/wrapping/**")
-					.uri("lb://books")
+					.uri(BOOK_ROUTER)
 			)
 			// MEMBER REGISTER
 			.route("member_register_route",
 				p -> p.path("/api/members")
 					.and().method("POST")
 					.filters(f -> f.filter(signupFilter.apply(new SignupFilter.Config())))
-					.uri("lb://books")
+					.uri(BOOK_ROUTER)
 			)
 			// MEMBER MODIFY
 			.route("member_modify",
 				p -> p.path("/api/members/me")
 					.and().method("PUT")
 					.filters(f -> f.filter(memberModifyFilter.apply(new MemberModifyFilter.Config())))
-					.uri("lb://books")
+					.uri(BOOK_ROUTER)
 			)
 			// MEMBER
 			.route("member_route",
 				p -> p.path("/api/members/**", "/api/point-policies/**",
 						"/api/point-history/**")
-					.uri("lb://books")
+					.uri(BOOK_ROUTER)
 			)
 			.route("auth_login",
 				p -> p.path("/api/auth/login")

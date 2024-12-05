@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureException;
 
 /**
  *  jwt Utils
@@ -19,15 +18,18 @@ import io.jsonwebtoken.SignatureException;
  */
 @Component
 public class JwtUtils {
-	private SecretKey secretKey;
+	private final SecretKey secretKey;
 
 	public JwtUtils(@Value("${spring.jwt.secret}") String secret) {
 		this.secretKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8),
 			Jwts.SIG.HS256.key().build().getAlgorithm());
 	}
 
-	public String getUserId(String token) {
+	public SecretKey getSecretKey() {
+		return secretKey;
+	}
 
+	public String getUserId(String token) {
 		return Jwts
 			.parser()
 			.verifyWith(secretKey)
@@ -58,11 +60,11 @@ public class JwtUtils {
 			.before(new Date());
 	}
 
-	public void validateToken(String token) throws ExpiredJwtException, SignatureException {
+	public void validateToken(String token) throws ExpiredJwtException {
 		// 토큰 파싱 및 유효성 검사
 		Jwts.parser()
-			.setSigningKey(secretKey)
+			.verifyWith(secretKey)
 			.build()
-			.parseClaimsJws(token);
+			.parseSignedClaims(token);
 	}
 }

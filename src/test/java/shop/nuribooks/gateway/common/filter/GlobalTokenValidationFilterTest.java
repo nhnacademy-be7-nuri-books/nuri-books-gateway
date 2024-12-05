@@ -3,6 +3,8 @@ package shop.nuribooks.gateway.common.filter;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.net.URI;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,8 +25,7 @@ import reactor.test.StepVerifier;
 import shop.nuribooks.gateway.common.util.JwtUtils;
 
 @ExtendWith(MockitoExtension.class)
-class AdminValidationFilterTest {
-
+class GlobalTokenValidationFilterTest {
 	@Mock
 	private JwtUtils jwtUtils;
 
@@ -32,20 +33,20 @@ class AdminValidationFilterTest {
 	private ServerWebExchange exchange;
 
 	@Mock
+	private GatewayFilterChain chain;
+
+	@Mock
 	private ServerHttpRequest request;
 
 	@Mock
 	private ServerHttpResponse response;
 
-	@Mock
-	private GatewayFilterChain chain;
-
 	@InjectMocks
-	private AdminValidationFilter adminValidationFilter;
+	private GlobalTokenValidationFilter globalTokenValidationFilter;
 
 	@Test
-	@DisplayName("ADMIN 권한 검증 필터 테스트 - 검증 성공")
-	void adminRoleWithValidTokenTest() {
+	@DisplayName("토큰 검증 성공 - 유효한 토큰")
+	void validTokenTest() {
 		// given
 		String accessToken = "valid.jwt.token";
 
@@ -54,15 +55,39 @@ class AdminValidationFilterTest {
 
 		when(exchange.getRequest()).thenReturn(request);
 		when(exchange.getRequest().getHeaders()).thenReturn(headers);
+		when(request.getURI()).thenReturn(URI.create("http://localhost:8080/api/book"));
 
 		doNothing().when(jwtUtils).validateToken(accessToken);
-		when(jwtUtils.getRole(accessToken)).thenReturn(AdminValidationFilter.ROLE_ADMIN);
+		when(jwtUtils.getUserId(accessToken)).thenReturn("user123");
+		when(jwtUtils.getRole(accessToken)).thenReturn("ROLE_USER");
+
+		ServerWebExchange.Builder exchangeBuilder = mock(ServerWebExchange.Builder.class);
+		when(exchange.mutate()).thenReturn(exchangeBuilder);
+		when(exchangeBuilder.request(any(ServerHttpRequest.class))).thenReturn(exchangeBuilder);
+		when(exchangeBuilder.build()).thenReturn(exchange);
 		when(chain.filter(exchange)).thenReturn(Mono.empty());
 
-		AdminValidationFilter.Config config = new AdminValidationFilter.Config();
+		// when
+		Mono<Void> result = globalTokenValidationFilter.filter(exchange, chain);
+
+		// then
+		StepVerifier.create(result)
+			.expectSubscription()
+			.verifyComplete();
+
+	}
+
+	@Test
+	@DisplayName("토큰이 없을 때 필터 통과 테스트")
+	void tokenAbsentTest() {
+		// given
+		HttpHeaders headers = new HttpHeaders();
+		when(exchange.getRequest()).thenReturn(request);
+		when(exchange.getRequest().getHeaders()).thenReturn(headers);
+		when(chain.filter(exchange)).thenReturn(Mono.empty());
 
 		// when
-		Mono<Void> result = adminValidationFilter.apply(config).filter(exchange, chain);
+		Mono<Void> result = globalTokenValidationFilter.filter(exchange, chain);
 
 		// then
 		assertNotNull(result, "Expected Mono<Void> to be non-null");
@@ -72,95 +97,58 @@ class AdminValidationFilterTest {
 	}
 
 	@Test
-	@DisplayName("ADMIN 권한 검증 필터 테스트 - accessToken Null")
-	void adminRoleWithInValidTokenNotExistAccessTokenTest() {
-		// given
-		HttpHeaders headers = new HttpHeaders();
-		DataBufferFactory bufferFactory = new DefaultDataBufferFactory();
-		AdminValidationFilter.Config config = new AdminValidationFilter.Config();
-
-		when(exchange.getRequest()).thenReturn(request);
-		when(exchange.getRequest().getHeaders()).thenReturn(headers);
-		when(exchange.getResponse()).thenReturn(response);
-		when(exchange.getResponse().getHeaders()).thenReturn(headers);
-		when(response.bufferFactory()).thenReturn(bufferFactory);
-		when(response.writeWith(any())).thenReturn(Mono.empty());
-
-		// when
-		Mono<Void> result = adminValidationFilter.apply(config).filter(exchange, chain);
-
-		// then
-		StepVerifier.create(result)
-			.expectSubscription()
-			.verifyComplete();
-
-		verify(exchange, times(5)).getResponse();
-	}
-
-	@Test
-	@DisplayName("ADMIN 권한 검증 필터 테스트 - ROLE_ADMIN 값없음")
-	void adminRoleWithInValidNotExistAdminTokenTest() {
+	@DisplayName("재갱신 url 일 경우 필터 통과 테스트")
+	void tokenReissueAbsentTest() {
 		// given
 		String accessToken = "valid.jwt.token";
 
 		HttpHeaders headers = new HttpHeaders();
-		DataBufferFactory bufferFactory = new DefaultDataBufferFactory();
 		headers.set(HttpHeaders.AUTHORIZATION, accessToken);
 
 		when(exchange.getRequest()).thenReturn(request);
 		when(exchange.getRequest().getHeaders()).thenReturn(headers);
-
-		doNothing().when(jwtUtils).validateToken(accessToken);
-		when(jwtUtils.getRole(accessToken)).thenReturn("ROLE_MEMBER");
-
-		when(exchange.getResponse()).thenReturn(response);
-		when(exchange.getResponse().getHeaders()).thenReturn(headers);
-		when(response.bufferFactory()).thenReturn(bufferFactory);
-		when(response.writeWith(any())).thenReturn(Mono.empty());
-
-		AdminValidationFilter.Config config = new AdminValidationFilter.Config();
+		when(request.getURI()).thenReturn(URI.create("http://localhost:8080/api/auth/reissue"));
+		when(chain.filter(exchange)).thenReturn(Mono.empty());
 
 		// when
-		Mono<Void> result = adminValidationFilter.apply(config).filter(exchange, chain);
+		Mono<Void> result = globalTokenValidationFilter.filter(exchange, chain);
 
 		// then
-		StepVerifier.create(result)
-			.expectSubscription()
-			.verifyComplete();
+		assertNotNull(result, "Expected Mono<Void> to be non-null");
 
-		verify(exchange, times(5)).getResponse();
+		StepVerifier.create(result)
+			.verifyComplete();
 	}
 
 	@Test
-	@DisplayName("ADMIN 권한 검증 필터 테스트 - 토큰 말료")
-	void adminRoleWithInValidExpiredTokenTest() {
+	@DisplayName("토큰 만료 예외 처리 테스트 - ExpiredJwtException")
+	void tokenExpiredTest() {
 		// given
-		String accessToken = "valid.jwt.token";
+		String accessToken = "expired.jwt.token";
 
 		HttpHeaders headers = new HttpHeaders();
-		DataBufferFactory bufferFactory = new DefaultDataBufferFactory();
 		headers.set(HttpHeaders.AUTHORIZATION, accessToken);
+
+		DataBufferFactory bufferFactory = new DefaultDataBufferFactory();
 
 		when(exchange.getRequest()).thenReturn(request);
 		when(exchange.getRequest().getHeaders()).thenReturn(headers);
-
-		doThrow(ExpiredJwtException.class).when(jwtUtils).validateToken(accessToken);
+		when(request.getURI()).thenReturn(URI.create("http://localhost:8080/api/book"));
 
 		when(exchange.getResponse()).thenReturn(response);
 		when(exchange.getResponse().getHeaders()).thenReturn(headers);
 		when(response.bufferFactory()).thenReturn(bufferFactory);
 		when(response.writeWith(any())).thenReturn(Mono.empty());
 
-		AdminValidationFilter.Config config = new AdminValidationFilter.Config();
+		when(jwtUtils.getRole(accessToken)).thenThrow(ExpiredJwtException.class);
 
 		// when
-		Mono<Void> result = adminValidationFilter.apply(config).filter(exchange, chain);
+		Mono<Void> result = globalTokenValidationFilter.filter(exchange, chain);
 
 		// then
-		StepVerifier.create(result)
-			.expectSubscription()
-			.verifyComplete();
+		assertNotNull(result, "Expected Mono<Void> to be non-null");
 
-		verify(exchange, times(5)).getResponse();
+		StepVerifier.create(result)
+			.verifyComplete();
 	}
 }

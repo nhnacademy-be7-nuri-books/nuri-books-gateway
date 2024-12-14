@@ -67,7 +67,7 @@ public class RouteLocatorConfig {
 			.route("books_route",
 				p -> p.path("/api/books/**", "/api/categories/**", "/api/contributors/**", "/api/reviews/**",
 						"/api/publishers/**", "/api/book-tags/**", "/api/cart/**", "/api/coupon-policies/**",
-						"/api/coupon-templates/**", "/api/member-coupons/**", "/api/image/**")
+						"/api/coupon-templates/**", "/api/member-coupons/**", "/api/image/**", "/api/coupons/**")
 					.uri(BOOK_ROUTER)
 			)
 			// CUSTOMER ORDER REGISTER
